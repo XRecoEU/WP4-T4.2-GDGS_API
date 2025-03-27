@@ -1,0 +1,68 @@
+services:
+  api_app-wp4.2-gdgs:
+    container_name: gdgs_api-wp4.2
+    command: /opt/conda/envs/gdnerf/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${SERVICE_PORT}
+    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:1.0.0
+    ports:
+      - ${SERVICE_PORT}:${SERVICE_PORT}
+    environment:
+      - PYTHONPATH=/app:/app/api_src
+    depends_on: 
+      - redis-wp4.2-gdgs
+    env_file:
+      - inf_server_config.env
+    volumes:
+      - ./volume:/opt/volume
+    networks:
+      - gdgs_net
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  celery_worker-wp4.2-gdgs:
+    container_name: gdgs_celery_worker-wp4.2
+    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:1.0.0
+    command: /opt/conda/envs/gdnerf/bin/celery --app celery_worker worker -P solo -l info
+    environment:
+      - PYTHONPATH=/app:/app/api_src
+    depends_on:
+      - redis-wp4.2-gdgs
+      - api_app-wp4.2-gdgs
+    env_file:
+      - inf_server_config.env
+    shm_size: '24gb'
+    networks:
+      - gdgs_net
+    volumes:
+      - ./volume:/opt/volume # Where datasets will be downloaded
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+#              capabilities: [gpu]
+              capabilities: [ gpu , compute, utility, graphics ]
+
+  redis-wp4.2-gdgs:
+    container_name: gdgs_redis-wp4.2
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      gdgs_net:
+        ipv4_address: 172.23.0.79
+
+
+networks:
+  gdgs_net:
+    ipam:
+      config:
+      - subnet: 172.23.0.0/16
+    driver: bridge
+
