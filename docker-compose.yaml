@@ -2,12 +2,12 @@ services:
   api_app-wp4.2-gdgs:
     container_name: gdgs_api-wp4.2
     command: /opt/conda/envs/gdnerf/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${SERVICE_PORT}
-    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:1.0.0
+    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:v1.1.0
     ports:
       - ${SERVICE_PORT}:${SERVICE_PORT}
     environment:
       - PYTHONPATH=/app:/app/api_src
-    depends_on: 
+    depends_on:
       - redis-wp4.2-gdgs
     env_file:
       - inf_server_config.env
@@ -25,7 +25,7 @@ services:
 
   celery_worker-wp4.2-gdgs:
     container_name: gdgs_celery_worker-wp4.2
-    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:1.0.0
+    image: registry.atosresearch.eu:18490/repository/xreco/wp4/xreco-gdgs-wp42:v1.1.0
     command: /opt/conda/envs/gdnerf/bin/celery --app celery_worker worker -P solo -l info
     environment:
       - PYTHONPATH=/app:/app/api_src

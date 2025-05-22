@@ -10,6 +10,7 @@ CODEOWNER: sergio.montoya@i2cat.net
 PyTorch implementation of GDGS: Generalizable Depth-based Gaussian Splatting for sparse view synthesis. GDGS was developed under the XRECO Project. XRECO is an HorizonEurope Innovation Project co-financed by the EC under Grant Agreement ID: 101070250. 
 
 GDGS renders real-time views on unseen scenes from few views using a rasterizer of 3DGS. GDGS is a new real-time generalizable view synthesis model capable of generating high-quality views even with very few input views that are far apart from each other. Given a set of sparse input source views, our model can generalize to new scenes and generate highly realistic renders.
+
 ## Getting started
 
 ### Application overview
@@ -19,6 +20,7 @@ This application provides a self-contained API that processes requests and distr
 - **api_app**: FastAPI-based API that produces queries and obtains results from asynchronous tasks. This acts as an interface to the source code of GDGS.
 - **celery_worker**: Celery container that creates asynchronous tasks. This is the main component which runs the code of GDGS as asynchronous tasks.
 - **redis**: Message broker and database for the queue and jobs. It manages the communication between the API and the Celery container.
+- **MinIO**: MinIO local container in case that no remote MinIO container is running. 
 
 #### Creating a configuration file
 
@@ -39,19 +41,6 @@ Description:
 | AWS_PASSWORD | Password for the AWS S3 storage. |
 
 #### Start containers
-
-First clone and set this repository as the workspace for locating necessary files:
-```
-git clone git@github.com:XRecoEU/WP4-T4.2-Neural_Rendering_Services.git
-cd WP4-T4.2-Neural_Rendering_Services/
-export workspace=$(pwd)
-# Initialize and clone submodules
-git submodule init
-git submodule update
-```
-
-For a step by step example, follow the guide that is on the bottom part of this README.md file.
-
 When you want to start all the containers, you can run the following command:
 ```
 docker compose --env-file inf_server_config.env up -d
@@ -68,6 +57,7 @@ See the available endpoint services of FastAPI by accessing to **/docs**.
 - /download_experiment/{experiment_name}: Downloads an RGB and depth videos of new views from different viewpoints from a finetuned model. It also downloads the model weights.
 - /check_status/{experiment_name}: Checks the status of a finetuning experiment.
 - /infer_views_from_zip: Synthesizes a video of a new camera trajectory of a seen or unseen scene.
+- /download_preview: Download the last result of an inference (result from /infer_views_from_zip).
 
 ### Workflow
 
@@ -78,8 +68,6 @@ See the available endpoint services of FastAPI by accessing to **/docs**.
   <li>When the training has finished, qualitative examples of the trained model and its weights can be obtained with `/download_experiment/{experiment_name}`.</li>
   <li>Once the generalized model is finetuned on a scene, it can generate new views of seen or unseen time instants with `/infer_views_from_zip`. The file structure for the inference is specified in the corresponding API endpoint. </li>
 </ol>
-
-
 
 ## API Endpoints
 
@@ -116,7 +104,7 @@ Where the calibration file has the following structure:
 ### Train
 <b> /train </b>
 
-Finetunes GDGS in a specific scene, which has to be a dataset which has been previously uploaded with <b> /upload_zip/{dataset_name} </b>. 
+Finetunes GDNeRF in a specific scene, which has to be a dataset which has been previously uploaded with <b> /upload_zip/{dataset_name} </b>. 
 
 <details>
     <summary> API call Body content example </summary>
@@ -169,6 +157,10 @@ dataset.zip
 }
 ```
 
+<b> /download_preview </b>: Download the result of the latest inference.
+
+## Step by step example
+
 ## Step by step AWS example
 
 When you want to start all the containers, you can run the following command:
@@ -208,25 +200,23 @@ dataset_name: API_Bet_ORBEC
 ```
 {
   "params": {
-    "zip_url": "https://xreco-nmr.s3.eu-west-1.amazonaws.com/gdgs_test/video_inference_Bet.zip",
+    "zip_url": "https://xreco-nmr.s3.eu-west-1.amazonaws.com/gdnerf_test/video_inference_Bet.zip",
     "experiment_name": "Bet_orbec_test",
-    "downsize_factor": 2,
+    "downsize_factor": 4,
     "depth_scaling": 1.0,
     "invert_extrinsics": true
   }
 }
 ```
 
-## Resources
+7. Additionally, the last inference result can be retrieved again by calling the endpoint `/download_preview` and indicating the experiment name.
 
+## Resources
 - [Input example ZIP](https://drive.google.com/file/d/1DFlu2_hcWa2XeLLCVptxak4F1mZD52Dd/view?usp=drive_link)
 - [View synthesis example ZIP](https://drive.google.com/file/d/1eYZvMjhWlTvi9dPCXbIDF6l-Q48d9Z_I/view?usp=sharing)
 - [calibration.json example](https://drive.google.com/file/d/1pFS-ogEszsHOmXJx5P1MVq6tmM0MYUE0/view?usp=sharing)
-- [Video result output]() # TODO
+- [Video result output](https://drive.google.com/file/d/1Z_g4YQAo2UjEHYYr2OT18ar4N_bTbNKo/view?usp=sharing)
 
-## API usage video example
-
-# TODO
 
 ## Acknowledgement
 
